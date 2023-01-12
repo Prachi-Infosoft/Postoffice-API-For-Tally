@@ -1,0 +1,158 @@
+;;https://github.com/Prachi-Infosoft/Postoffice-API-For-Tally.git
+[#Menu:Gatewayoftally]
+ [#Form:Ledger]
+    Add:Button:satPinSerch
+ 
+[Button:satPinSerch]
+ 
+    Title:"Pin Serch"
+    Key:Alt+3
+	
+	Action List	: ModifyVar, DispRepo
+[Button:ModifyVar]
+	Key		: alt + t
+	Action:Call	: DownloadFile and Display Report
+[Button:DispRepo]
+	Key		: alt + Z
+	Action	: Display:SatWebPinDetailsRep
+	
+	[Function:DownloadFile and Display Report]
+		;Parameter	: pPinNo	: String
+		Local Formula:isExeExist	: $$IsFileExists:"postoffice.exe"
+		050	: Modify Variables	: ParameterToPostOff
+		090	: IF:@isExeExist
+		100	: 	Exec Commandex: "postoffice.exe":##vPINNumber	;700001		;;here give parameter to exe
+		;110	: 	Display:SatWebPinDetailsRep
+		150	: Else
+		160	:	Msg Box:ERR:"Supported File Does not exist \n download from \n \nhttps://github.com/Prachi-Infosoft/Postoffice-API-For-Tally.git"
+		170	: ENDIF
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[System:Variable]
+	vPINNumber	
+	
+[Variable:vPINNumber]
+	Type	: String
+[Report: ParameterToPostOff]
+	Form	: ParameterToPostOff
+	
+[Form: ParameterToPostOff]
+    No Confirm  : Yes
+    Full Width  : No
+
+    Space Top   : 1
+    Space Bottom: 1
+    Space Left  : 1
+    Space Right : 1
+
+    Background  : @@SV_UNYELLOW
+    Parts       : ParameterToPostOff
+   ; Output      : MyAuto AutoColumns
+    Option      : Small Size Form
+	;On:Form Accept:Yes:Form Accept
+	;On:FormAccept:Yes:Call:DownloadFile and Display Report
+[Part: ParameterToPostOff]
+
+    Lines       : Form SubTitle, ParameterToPostOff
+    Local       : Field : Form SubTitle         : Info      : $$LocaleString:"Expected PIN"
+	[Line:ParameterToPostOff]
+		Field	: ParameterToPostOff
+		[Field:ParameterToPostOff]
+			Use	: Name Field
+			Modifies: vPINNumber:Yes
+			Variable:vPINNumber
+			
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;Actual Report
+[Report : SatWebPinDetailsRep]
+ 
+ 
+    Form 	: ImportStatusLedForm
+	Variable: vFileType	: String:"xml"		;;set as json if you want to map json file
+ 
+[Form : ImportStatusLedForm]
+ 
+ 
+    Width       : 100% Screen
+    Height      : 100% Screen
+    Part 		: ISLEDMainPart
+	Button		: satPinSerch
+	
+[Part : ISLEDMainPart]
+ 
+    Lines : ISLEDHeaderLine, ISLEDDetailsLine
+    Repeat : ISLEDDetailsLine : SatHttpJsonPinColl
+    Scroll : Vertical
+
+[Line: ISLEDHeaderLine]
+    Fields : ISLEDSrNoHField, ISLEDNameHField
+    Right Fields: ISLEDStatusHField
+    Border :    Thin Box
+
+[Line: ISLEDDetailsLine]
+    Fields : ISLEDSrNoField, ISLEDNameField,
+    Right Fields: ISLEDStatusField
+    Border :    Thin Bottom
+	Local:Field:ISLEDSrNoField:Set as:$$Line
+	
+[Field: ISLEDSrNoHField]
+    Width : 30 mms
+    Type : String
+    Set as : "Post Office Name"
+    Skip : Yes
+    Border : Thin Left Right
+    Style : Normal Bold
+
+[Field: ISLEDNameHField]
+    Width : 120 mms
+    Type : String
+    Set as : "City Name"
+    Skip : Yes
+    Border : Thin Left Right
+    Style : Normal Bold
+
+[Field: ISLEDStatusHField]
+    Width : 170 mms
+    Type : String
+    Set as : "District Name"
+    Skip : Yes
+    Border : Thin Right
+    Style : Normal Bold
+ 
+[Field: ISLEDSrNoField]
+    Width : 30 mms
+    Set as : $SatPoName
+    Border : Thin Left Right
+
+[Field: ISLEDNameField]
+    Width : 120 mms
+    Set as : $Name
+    Border : Thin Left Right
+
+[Field: ISLEDStatusField]
+    Width : 170 mms
+    Set as : $District
+    Border : Thin Right
+
+
+[System: Formula]
+ 
+
+	postofficejson : $$SysInfo:ApplicationPath + "\postoffice." + ##vFileType
+[Collection:SatHttpJsonPinColl]
+	Client Only:Yes
+	Option	: SatHttpJsonPinColl JSON	: (##vFileType="json")
+	
+	Option	: SatHttpJsonPinColl XML	: (##vFileType="xml")
+	[!Collection:SatHttpJsonPinCollJSON]
+		Data Source:File JSON:@@postofficejson:ASCII
+		JSON Object Path:"postoffice:1"
+		
+	[!Collection:SatHttpJsonPinColl XML]
+		Data Source:File xml:@@postofficejson:ASCII
+		JSON Object Path:"postoffice:1:Root"
+    
+;; LedMaster Template
+
+;; End-of-File
+/*
+[Include: D:\TDD\GSTValidator\PostalPINcodes.txt]
